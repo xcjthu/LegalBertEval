@@ -6,6 +6,12 @@ from .accuracy_tool import gen_micro_macro_result
 def null_output_function(data, config, *args, **params):
     return ""
 
+def acc_output_function(data, config, *args, **params):
+    if data['total'] == 0:
+        return 0
+    else:
+        return json.dumps({'acc': round(data['right'] / data['total'], 4)})
+
 
 def basic_output_function(data, config, *args, **params):
     which = config.get("output", "output_value").replace(" ", "").split(",")

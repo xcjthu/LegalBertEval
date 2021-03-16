@@ -1,13 +1,9 @@
 from .model.CNN import TextCNN
-from .model.Bert import Bert
-from .model.ParaBert import ParaBert
-from .model.DenoiseBert import DenoiseBert
+from .CauseAction import CauseAction
 
 model_list = {
     "CNN": TextCNN,
-    "BERT": Bert,
-    "ParaBert": ParaBert,
-    "Denoise": DenoiseBert,
+    "CauseAction": CauseAction,
 }
 
 def get_model(model_name):
