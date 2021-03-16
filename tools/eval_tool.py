@@ -88,16 +88,21 @@ def valid(model, dataset, epoch, writer, config, gpu_list, output_function, mode
         raise NotImplementedError
 
     if config.getboolean("distributed", "use"):
-        shape = len(acc_result)
-        mytensor = torch.LongTensor([acc_result[key] for key in acc_result]).to(gpu_list[local_rank])
-        mylist = [torch.LongTensor(shape).to(gpu_list[local_rank]) for i in range(config.getint('distributed', 'gpu_num'))]
+        shape = (len(acc_result), 4)
+        # mytensor = torch.LongTensor([acc_result[key] for key in acc_result]).to(gpu_list[local_rank])
+        mytensor = torch.LongTensor([[key["TP"], key["FN"], key["FP"], key["TN"]] for key in acc_result]).to(gpu_list[local_rank])
+        mylist = [torch.LongTensor(shape[0], shape[1]).to(gpu_list[local_rank]) for i in range(config.getint('distributed', 'gpu_num'))]
+        # print('shape', shape)
+        # print('mytensor', mytensor.shape)
         torch.distributed.all_gather(mylist, mytensor)#, 0)
         if local_rank == 0:
             mytensor = sum(mylist)
             index = 0
-            for key in acc_result:
-                acc_result[key] = int(mytensor[index])
-                index += 1
+            for i in range(len(acc_result)):
+                acc_result[i]['TP'], acc_result[i]['FN'], acc_result[i]['FP'], acc_result[i]['TN'] = int(mytensor[i][0]), int(mytensor[i][1]), int(mytensor[i][2]), int(mytensor[i][3])
+            # for key in acc_result:
+            #     acc_result[key] = int(mytensor[index])
+            #     index += 1
     if local_rank <= 0:
         delta_t = timer() - start_time
         output_info = output_function(acc_result, config)
