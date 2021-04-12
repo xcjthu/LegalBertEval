@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pytorch_pretrained_bert import BertModel
+from transformers import BertModel
 
 from tools.accuracy_tool import single_label_top1_accuracy
 
@@ -35,7 +35,8 @@ class BertQA(nn.Module):
         token = token.view(token.size()[0] * token.size()[1], token.size()[2])
         mask = mask.view(mask.size()[0] * mask.size()[1], mask.size()[2])
 
-        encode, y = self.bert.forward(text, token, mask, output_all_encoded_layers=False)
+        ret = self.bert(text, attention_mask=mask, token_type_ids=token)
+        y = ret['pooler_output']
 
         y = y.view(batch * option, -1)
         y = self.rank_module(y)

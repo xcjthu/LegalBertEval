@@ -14,3 +14,9 @@ def basic_output_function(data, config, *args, **params):
         result.append(temp[name])
 
     return json.dumps(result, sort_keys=True)
+
+def binary_output_function(data, config, *args, **params):
+    if data['total'] == 0:
+        return json.dumps({'acc': 0})
+    else:
+        return json.dumps({'acc': round(data['right'] / data['total'], 4)})

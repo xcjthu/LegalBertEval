@@ -2,21 +2,20 @@ import json
 import torch
 import numpy as np
 import os
-from pytorch_pretrained_bert import BertTokenizer
-
+from transformers import BertTokenizer
 
 class BertQA:
     def __init__(self, config, mode):
         self.max_len1 = config.getint("data", "max_len1")
         self.max_len2 = config.getint("data", "max_len2")
 
-        self.tokenizer = BertTokenizer.from_pretrained(os.path.join(config.get("model", "bert_path"), "vocab.txt"))
+        self.tokenizer = BertTokenizer.from_pretrained(config.get("model", "bert_path"))
         self.k = config.getint("data", "topk")
 
     def convert(self, tokens, which, l):
         mask = []
         tokenx = []
-
+        #print(tokens)
         tokens = self.tokenizer.tokenize(tokens)
         ids = self.tokenizer.convert_tokens_to_ids(tokens)
 
@@ -70,24 +69,25 @@ class BertQA:
             temp_token = []
 
             for option in ["A", "B", "C", "D"]:
+                #print(temp_data)
                 res = temp_data["statement"] + temp_data["option_list"][option]
                 text = []
 
                 for a in range(0, len(res)):
                     text = text + [res[a]]
-                text = text[0:self.max_len1]
+                text = ''.join(text[0:self.max_len1])
 
                 txt1, mask1, token1 = self.convert(text, 0, self.max_len1)
 
                 ref = []
-                k = [0, 1, 2, 6, 12, 7, 13, 3, 8, 9, 14, 15, 4, 10, 16, 5, 16, 17]
+                k = [0, 1, 2, 6, 12, 7, 13, 3, 8, 9, 14, 15, 4, 10, 11, 5, 16, 17]
                 for a in range(0, self.k):
                     res = temp_data["reference"][option][k[a]]
                     text = []
 
                     for a in range(0, len(res)):
                         text = text + [res[a]]
-                    text = text[0:self.max_len2]
+                    text = ''.join(text[0:self.max_len2])
 
                     txt2, mask2, token2 = self.convert(text, 1, self.max_len2)
 
