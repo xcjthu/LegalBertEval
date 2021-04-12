@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pytorch_pretrained_bert import BertModel
+from transformers import BertModel
 
 
 class BertEncoder(nn.Module):

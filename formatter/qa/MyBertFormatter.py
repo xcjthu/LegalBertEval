@@ -22,8 +22,10 @@ class MyBertFormatter:
     def __init__(self, config, mode):
         self.max_len = config.getint("data", "max_len")
         self.multi = config.getboolean("data", "multi_choice")
-
-        self.tokenizer = BertTokenizer.from_pretrained(config.get("model", "bert_path"))
+        try:
+            self.tokenizer = BertTokenizer.from_pretrained(config.get("model", "bert_path"))
+        except:
+            self.tokenizer = BertTokenizer.from_pretrained("hfl/chinese-roberta-wwm-ext")
         self.k = config.getint("data", "topk")
 
     def process(self, data, config, mode, *args, **params):

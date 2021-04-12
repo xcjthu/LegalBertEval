@@ -10,7 +10,7 @@ class MyBertQA(nn.Module):
     def __init__(self, config, gpu_list, *args, **params):
         super(MyBertQA, self).__init__()
 
-        self.bert = BertForMultipleChoice.from_pretrained("bert-base-chinese")
+        self.bert = BertForMultipleChoice.from_pretrained(config.get("model", "bert_path"))
 
         self.multi = config.getboolean("data", "multi_choice")
         if self.multi:
