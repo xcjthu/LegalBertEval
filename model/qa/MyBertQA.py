@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import BertModel,BertForMultipleChoice
+from transformers import BertModel,BertForMultipleChoice,LongformerForMultipleChoice
 
 from tools.accuracy_tool import single_label_top1_accuracy
 
@@ -9,8 +9,12 @@ from tools.accuracy_tool import single_label_top1_accuracy
 class MyBertQA(nn.Module):
     def __init__(self, config, gpu_list, *args, **params):
         super(MyBertQA, self).__init__()
-
-        self.bert = BertForMultipleChoice.from_pretrained(config.get("model", "bert_path"))
+        if config.get("model", "bert_path") == "/mnt/datadisk0/xcj/LegalBert/model/VanillaLFM_All4096/model_1_24000":
+            self.bert = LongformerForMultipleChoice.from_pretrained(config.get("model", "bert_path"))
+            self.lfm = True
+        else:
+            self.bert = BertForMultipleChoice.from_pretrained(config.get("model", "bert_path"))
+            self.lfm = False
 
         self.multi = config.getboolean("data", "multi_choice")
         if self.multi:
@@ -24,7 +28,10 @@ class MyBertQA(nn.Module):
         self.bert = nn.DataParallel(self.bert, device_ids=device)
 
     def forward(self, data, config, gpu_list, acc_result, mode):
-        ret = self.bert(data["input"], attention_mask=data["mask"], token_type_ids=data["segment"])
+        if self.lfm:
+            ret = self.bert(data["input"], attention_mask=data["mask"], token_type_ids=data["segment"], global_attention_mask=data["global_att"])
+        else:
+            ret = self.bert(data["input"], attention_mask=data["mask"], token_type_ids=data["segment"])
         logit = ret["logits"]
         if self.multi:
             loss = self.criterion(logit, data["label"].float())

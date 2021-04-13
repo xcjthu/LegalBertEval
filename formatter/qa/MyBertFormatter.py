@@ -33,6 +33,7 @@ class MyBertFormatter:
         mask = []
         segment = []
         label = []
+        global_attention = []
 
         for temp_data in data:
             if self.multi:
@@ -60,6 +61,7 @@ class MyBertFormatter:
             inputx.append([])
             mask.append([])
             segment.append([])
+            global_attention.append([])
 
             statement = self.tokenizer.tokenize(temp_data["statement"])
 
@@ -76,6 +78,8 @@ class MyBertFormatter:
                 _truncate_seq_pair(article, option_tokens, self.max_len - 3)
                 tokens = ["[CLS]"] + article + ["[SEP]"] + option_tokens + ["[SEP]"]
                 segment_ids = [0] * (len(article) + 2) + [1] * (len(option_tokens) + 1)
+                #gat = [1] + [0] * len(article) + [1] + [0] * len(option_tokens) + [1]
+                gat = [1] * len(segment_ids)
 
                 input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
                 input_mask = [1] * len(input_ids)
@@ -84,17 +88,21 @@ class MyBertFormatter:
                 input_ids += padding
                 input_mask += padding
                 segment_ids += padding
+                gat += padding
 
                 assert len(input_ids) == self.max_len
                 assert len(input_mask) == self.max_len
                 assert len(segment_ids) == self.max_len
+                assert len(gat) == self.max_len
                 inputx[-1].append(input_ids)
                 mask[-1].append(input_mask)
                 segment[-1].append(segment_ids)
+                global_attention[-1].append(gat)
         # print(label)
         return {
             "input": torch.LongTensor(inputx),
             "mask": torch.LongTensor(mask),
             "segment": torch.LongTensor(segment),
             "label": torch.LongTensor(label),
+            "global_att": torch.LongTensor(global_attention),
         }
