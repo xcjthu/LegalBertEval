@@ -9,7 +9,8 @@ from tools.accuracy_tool import single_label_top1_accuracy
 class MyBertQA(nn.Module):
     def __init__(self, config, gpu_list, *args, **params):
         super(MyBertQA, self).__init__()
-        if config.get("model", "bert_path") == "/mnt/datadisk0/xcj/LegalBert/model/VanillaLFM_All4096/model_1_24000":
+        bert_path = config.get("model", "bert_path")
+        if bert_path not in ['bert-base-chinese', 'hfl/chinese-roberta-wwm-ext', '/mnt/datadisk0/xcj/LegalBert/model/LRoBERTa']:
             self.bert = LongformerForMultipleChoice.from_pretrained(config.get("model", "bert_path"))
             self.lfm = True
         else:
