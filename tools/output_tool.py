@@ -19,15 +19,15 @@ def basic_output_function(data, config, *args, **params):
 
 def ljp_output_function(data, config, *args, **params):
     temp = {}
-    temp["zm"] = gen_micro_macro_result(data["zm"])
-    temp["ft"] = gen_micro_macro_result(data["ft"])
-    temp["xq"] = data["xq"]
+    temp["charge"] = gen_micro_macro_result(data["charge"])
+    temp["law"] = gen_micro_macro_result(data["law"])
+    temp["term"] = data["term"]
     result = {}
-    for name in ["zm", "ft"]:
-        result[name] = []
-        for name_ in ["mip", "mir", "mif", "map", "mar", "maf"]:
-            result[name].append(temp[name][name_])
+    for name in ["charge", "law"]:
+        result[name] = {'mif': temp[name]['mif'], 'maf': temp[name]['maf']}
+        # for name_ in ["mip", "mir", "mif", "map", "mar", "maf"]:
+        #     result[name].append(temp[name][name_])
 
-    result["xq"] = data["xq"][1] / data["xq"][0]
+    result["term"] = round(data["term"][1] / data["term"][0], 4)
 
     return json.dumps(result, sort_keys=True)

@@ -2,9 +2,7 @@ import json
 import os
 from torch.utils.data import Dataset
 import random
-
 from tools.dataset_tool import dfs_search
-
 
 class JsonFromFilesDataset(Dataset):
     def __init__(self, config, mode, encoding="utf8", *args, **params):
@@ -24,8 +22,14 @@ class JsonFromFilesDataset(Dataset):
         self.data = []
         for filename in self.file_list:
             f = open(filename, "r", encoding=encoding)
-            for line in f:
-                self.data.append(json.loads(line))
+            docs = json.load(f)
+            for doc in docs:
+                self.data.append({
+                    "fact": doc["SS"],
+                    "charge": doc["crime"],
+                    "laws": ["%s_%s" % (law[0], law[1]) for law in doc["related_laws"]],
+                    "imprisonment": doc["term_of_imprisonment"]
+                })
 
         if mode == "train":
             random.shuffle(self.data)
@@ -35,6 +39,7 @@ class JsonFromFilesDataset(Dataset):
             self.reduce = False
         if self.reduce:
             self.reduce_ratio = config.getfloat("data", "reduce_ratio")
+        print("=" * 10, mode, "data num", len(self.data), '=' * 20)
 
     def __getitem__(self, item):
         if self.reduce:

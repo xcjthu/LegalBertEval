@@ -1,13 +1,11 @@
 import logging
 
-from formatter.ljp.Bert import BertLJP
-from formatter.ljp.Word import WordLJP
+from formatter.ljp.MultiTaskLJPFormatter import MultiTaskLJPFormatter
 
 logger = logging.getLogger(__name__)
 
 formatter_list = {
-    "BertLJP": BertLJP,
-    "WordLJP": WordLJP
+    "MultiTaskLJP": MultiTaskLJPFormatter,
 }
 
 

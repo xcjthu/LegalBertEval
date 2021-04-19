@@ -1,17 +1,7 @@
-from model.ljp.Bert import LJPBert
-from model.ljp.TopJudge import TopJudge
-from model.ljp.CNN import LJPCNN
-from model.ljp.Gating import Gating
-from model.ljp.LSTM import LSTM
-from model.ljp.DPCNN import DPCNN
+from model.ljp.MultiTaskLJP import MultiTaskLJP
 
 model_list = {
-    "LJPBert": LJPBert,
-    "LJPTopjudge": TopJudge,
-    "LJPCNN": LJPCNN,
-    "LJPGating": Gating,
-    "LJPLSTM": LSTM,
-    "LJPDPCNN": DPCNN
+    "MultiTaskLJP": MultiTaskLJP,
 }
 
 
