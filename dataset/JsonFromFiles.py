@@ -1,7 +1,6 @@
 import json
 import os
 from torch.utils.data import Dataset
-
 from tools.dataset_tool import dfs_search
 
 
@@ -9,22 +8,40 @@ class JsonFromFilesDataset(Dataset):
     def __init__(self, config, mode, encoding="utf8", *args, **params):
         self.config = config
         self.mode = mode
-        self.file_list = []
-        self.data_path = config.get("data", "%s_data_path" % mode)
-        self.encoding = encoding
 
-        filename_list = config.get("data", "%s_file_list" % mode).replace(" ", "").split(",")
-
-        for name in filename_list:
-            self.file_list = self.file_list + dfs_search(os.path.join(self.data_path, name), True)
-        self.file_list.sort()
-
+        self.query_path = config.get("data", "query_path")
+        self.cand_path = config.get("data", "cand_path")
+        self.labels = json.load(open(config.get("data", "label_path"), 'r'))
         self.data = []
-        for filename in self.file_list:
-            self.data = self.data + json.load(open(filename, "r", encoding=encoding))
+
+        test_file = config.get("data", "test_file")
+        querys = []
+        for i in range(5):
+            if mode == 'train':
+                if test_file == str(i):
+                    continue
+                else:
+                    querys += json.load(open(os.path.join(self.query_path, 'query_%d.json' % i), 'r'))
+            else:
+                if test_file == str(i):
+                    querys = json.load(open(os.path.join(self.query_path, 'query_%d.json' % i), 'r'))
+        for query in querys:
+            que = query["q"]
+            path = os.path.join(self.cand_path, str(query["ridx"]))
+            for fn in os.listdir(path):
+                cand = json.load(open(os.path.join(path, fn), "r"))
+                self.data.append({
+                    "query": que,
+                    "cand": cand["ajjbqk"],
+                    "label": int(fn.split('.')[0]) in self.labels[str(query["ridx"])],
+                    "index": (query["ridx"], fn.split('.')[0])
+                })
 
     def __getitem__(self, item):
-        return self.data[item]
+        return self.data[item % len(self.data)]
 
     def __len__(self):
-        return len(self.data)
+        if self.mode == "train":
+            return len(self.data)
+        else:
+            return len(self.data)

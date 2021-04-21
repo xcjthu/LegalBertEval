@@ -21,12 +21,15 @@ if __name__ == "__main__":
     parser.add_argument('--local_rank', type=int, help='local rank', default=-1)
     parser.add_argument('--do_test', help="do test while training or not", action="store_true")
     parser.add_argument('--comment', help="checkpoint file path", default=None)
+    parser.add_argument('--test_file', default=None)
     args = parser.parse_args()
 
     configFilePath = args.config
 
     config = create_config(configFilePath)
     
+    if not args.test_file is None:
+        config.set("data", "test_file", args.test_file)
 
     use_gpu = True
     gpu_list = []

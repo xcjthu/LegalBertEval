@@ -1,13 +1,12 @@
 import logging
 
 from .Basic import BasicFormatter
-from .CauseActionFormatter import CauseActionFormatter
-
+from .LecardFormatter import LecardFormatter
 logger = logging.getLogger(__name__)
 
 formatter_list = {
     "Basic": BasicFormatter,
-    "CauseAction": CauseActionFormatter,
+    "lecard": LecardFormatter,
 }
 
 

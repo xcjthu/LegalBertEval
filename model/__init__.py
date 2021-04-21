@@ -1,9 +1,7 @@
-from .model.CNN import TextCNN
-from .CauseAction import CauseAction
+from .model.LecardPLM import LecardPLM
 
 model_list = {
-    "CNN": TextCNN,
-    "CauseAction": CauseAction,
+    "lecard": LecardPLM,
 }
 
 def get_model(model_name):
