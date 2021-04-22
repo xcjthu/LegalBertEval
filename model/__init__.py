@@ -1,7 +1,9 @@
 from .model.LecardPLM import LecardPLM
+from .model.PairwiseLecardPLM import PairwisePLM
 
 model_list = {
     "lecard": LecardPLM,
+    "pairwise": PairwisePLM,
 }
 
 def get_model(model_name):

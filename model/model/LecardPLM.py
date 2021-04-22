@@ -31,9 +31,11 @@ class LecardPLM(nn.Module):
     def forward(self, data, config, gpu_list, acc_result, mode):
         inputx = data['inputx']
         if self.lfm:
-            out = self.encoder(inputx, attention_mask = data['mask'], token_type_ids = data["segment"], global_attention_mask = data["global_att"])
+            # out = self.encoder(inputx, attention_mask = data['mask'], token_type_ids = data["segment"], global_attention_mask = data["global_att"])
+            out = self.encoder(inputx, attention_mask = data['mask'], global_attention_mask = data["global_att"])
         else:
-            out = self.encoder(inputx, attention_mask = data['mask'], token_type_ids = data["segment"])
+            # out = self.encoder(inputx, attention_mask = data['mask'], token_type_ids = data["segment"])
+            out = self.encoder(inputx, attention_mask = data['mask'])
         y = out['pooler_output']
         result = self.fc(y)
         loss = self.criterion(result, data["labels"])

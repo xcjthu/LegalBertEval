@@ -2,11 +2,13 @@ import logging
 
 from .Basic import BasicFormatter
 from .LecardFormatter import LecardFormatter
+from .PairwiseFormatter import PairwiseFormatter
 logger = logging.getLogger(__name__)
 
 formatter_list = {
     "Basic": BasicFormatter,
     "lecard": LecardFormatter,
+    "pairwise": PairwiseFormatter,
 }
 
 

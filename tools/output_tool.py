@@ -41,3 +41,10 @@ def output_function1(data, config, *args, **params):
             'f1': round(f1, 4),
         }
     return json.dumps(metric)
+
+def binary_function(data, config, *args, **params):
+    if data["total"] == 0:
+        metric = {"acc": 0}
+    else:
+        metric = {"acc": round(data["right"] / data["total"], 4)}
+    return json.dumps(metric)
