@@ -84,6 +84,8 @@ def valid(model, dataset, epoch, writer, config, gpu_list, output_function, mode
             output_value(epoch, mode, "%d/%d" % (step + 1, total_len), "%s/%s" % (
                 gen_time_str(delta_t), gen_time_str(delta_t * (total_len - step - 1) / (step + 1))),
                          "%.3lf" % (total_loss / (step + 1)), output_info, '\r', config)
+    del data
+    del results
 
     predictions = {}
     for res in res_scores:

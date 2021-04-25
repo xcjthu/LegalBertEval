@@ -117,7 +117,8 @@ def train(parameters, config, gpu_list, do_test=False, local_rank=-1):
 
             global_step += 1
             writer.add_scalar(config.get("output", "model_name") + "_train_iter", float(loss), global_step)
-            # break
+            # if step > 20:
+            #     break
 
         if local_rank <= 0:
             output_info = output_function(acc_result, config)
@@ -138,6 +139,7 @@ def train(parameters, config, gpu_list, do_test=False, local_rank=-1):
 
         if current_epoch % test_time == 0:
             with torch.no_grad():
+                # pass
                 valid(model, parameters["valid_dataset"], current_epoch, writer, config, gpu_list, output_function)
                 if do_test:
                     valid(model, test_dataset, current_epoch, writer, config, gpu_list, output_function, mode="test")

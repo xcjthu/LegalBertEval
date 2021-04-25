@@ -33,7 +33,7 @@ class LecardFormatter(BasicFormatter):
         segment = []
         mask = []
         labels = []
-
+        global_att = []
         for temp in data:
             query = self.tokenizer.tokenize(temp["query"])[:self.query_len]
             cand = self.tokenizer.tokenize(temp["cand"])[:self.cand_len]
@@ -43,23 +43,27 @@ class LecardFormatter(BasicFormatter):
 
             input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
             input_mask = [1] * len(input_ids)
+            gat_mask = [1] * (len(query) + 2)
 
             padding = [0] * (self.max_len - len(input_ids))
             input_ids += padding
             input_mask += padding
             segment_ids += padding
+            gat_mask += [0] * (self.max_len - len(gat_mask))
 
             assert len(input_ids) == self.max_len
             assert len(input_mask) == self.max_len
             assert len(segment_ids) == self.max_len
+            assert len(gat_mask) == self.max_len
 
             inputx.append(input_ids)
             segment.append(segment_ids)
             mask.append(input_mask)
             labels.append(int(temp["label"]))
+            global_att.append(gat_mask)
 
-        global_att = np.zeros((len(data), self.max_len), dtype=np.int32)
-        global_att[:,0] = 1
+        #global_att = np.zeros((len(data), self.max_len), dtype=np.int32)
+        #global_att[:,0] = 1
         return {
             "inputx": torch.LongTensor(inputx),
             "segment": torch.LongTensor(segment),
