@@ -11,6 +11,11 @@ class JsonFromFilesDataset(Dataset):
         self.file_list = []
         self.data_path = config.get("data", "%s_data_path" % mode)
         self.encoding = encoding
+        self.ms = False
+        try:
+            self.ms = config.getboolean("data", "ms")
+        except:
+            pass
 
         filename_list = config.get("data", "%s_file_list" % mode).replace(" ", "").split(",")
         recursive = False
@@ -24,12 +29,19 @@ class JsonFromFilesDataset(Dataset):
             f = open(filename, "r", encoding=encoding)
             docs = json.load(f)
             for doc in docs:
-                self.data.append({
-                    "fact": doc["SS"],
-                    "charge": doc["crime"],
-                    "laws": ["%s_%s" % (law[0], law[1]) for law in doc["related_laws"]],
-                    "imprisonment": doc["term_of_imprisonment"]
-                })
+                if not self.ms:
+                    self.data.append({
+                        "fact": doc["SS"],
+                        "charge": doc["crime"],
+                        "laws": ["%s_%s" % (law[0], law[1]) for law in doc["related_laws"]],
+                        "imprisonment": doc["term_of_imprisonment"]
+                    })
+                else:
+                    self.data.append({
+                        "fact": doc["SS"],
+                        "charge": doc["actioncause"],
+                        "laws": ["%s_%s" % (law[0], law[1]) for law in doc["related_laws"]],
+                    })
 
         if mode == "train":
             random.shuffle(self.data)

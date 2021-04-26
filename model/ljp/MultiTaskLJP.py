@@ -5,7 +5,7 @@ import json
 
 from model.loss import MultiLabelSoftmaxLoss, log_square_loss
 from model.ljp.Predictor import LJPPredictor
-from tools.accuracy_tool import multi_label_accuracy, log_distance_accuracy_function
+from tools.accuracy_tool import multi_label_accuracy, log_distance_accuracy_function, single_label_top1_accuracy
 from transformers import BertModel, AutoModel, AutoConfig
 
 class MultiTaskLJP(nn.Module):
@@ -21,17 +21,34 @@ class MultiTaskLJP(nn.Module):
 
         self.fc = LJPPredictor(config, gpu_list, *args, hidden_size=self.hidden_size)
 
+        self.ms = False
+        try:
+            self.ms = config.getboolean("data", "ms")
+        except:
+            pass
+
         label2id = json.load(open(config.get("data", "label2id"), "r"))
-        self.criterion = {
-            "charge": MultiLabelSoftmaxLoss(config, len(label2id["charge"])),
-            "law": MultiLabelSoftmaxLoss(config, len(label2id["law"])),
-            "term": log_square_loss
-        }
-        self.accuracy_function = {
-            "charge": multi_label_accuracy,
-            "law": multi_label_accuracy,
-            "term": log_distance_accuracy_function,
-        }
+        self.keys = ["charge", "law"] if self.ms else ["charge", "law", "term"]
+        if self.ms:
+            self.criterion = {
+                "charge": nn.CrossEntropyLoss(), # MultiLabelSoftmaxLoss(config, len(label2id["charge"])),
+                "law": MultiLabelSoftmaxLoss(config, len(label2id["law"])),
+            }
+            self.accuracy_function = {
+                "charge": single_label_top1_accuracy,
+                "law": multi_label_accuracy,
+            }
+        else:
+            self.criterion = {
+                "charge": MultiLabelSoftmaxLoss(config, len(label2id["charge"])),
+                "law": MultiLabelSoftmaxLoss(config, len(label2id["law"])),
+                "term": log_square_loss
+            }
+            self.accuracy_function = {
+                "charge": multi_label_accuracy,
+                "law": multi_label_accuracy,
+                "term": log_distance_accuracy_function,
+            }
 
     def init_multi_gpu(self, device, config, *args, **params):
         self.encoder = nn.DataParallel(self.encoder, device_ids=device)
@@ -47,13 +64,13 @@ class MultiTaskLJP(nn.Module):
         result = self.fc(y)
 
         loss = 0
-        for name in ["charge", "law", "term"]:
+        for name in self.keys: #["charge", "law", "term"]:
             loss += self.criterion[name](result[name], data[name])
 
         if acc_result is None:
-            acc_result = {"charge": None, "law": None, "term": None}
+            acc_result = {key: None for key in self.keys}
 
-        for name in ["charge", "law", "term"]:
+        for name in self.keys: #["charge", "law", "term"]:
             acc_result[name] = self.accuracy_function[name](result[name], data[name], config, acc_result[name])
 
         return {"loss": loss, "acc_result": acc_result}
