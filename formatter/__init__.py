@@ -1,15 +1,11 @@
 import logging
 
-from formatter.scm.Bert import BertSCM
-from formatter.scm.Word import WordSCM
-from formatter.scm.Sent import SentSCM
+from formatter.scm.BertFormatter import BertSCM
 
 logger = logging.getLogger(__name__)
 
 formatter_list = {
     "BertSCM": BertSCM,
-    "WordSCM": WordSCM,
-    "SentSCM": SentSCM
 }
 
 

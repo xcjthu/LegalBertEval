@@ -1,15 +1,8 @@
 from model.scm.Bert import SCMBert
-from model.scm.CNN import SCMCNN
-from model.scm.bidaf import BiDAF
-from model.scm.ABCNN import SCMABCNN
-from model.scm.SMASH import SCMSMASH
+
 
 model_list = {
     "SCMBert": SCMBert,
-    "SCMCNN": SCMCNN,
-    "SCMBiDAF": BiDAF,
-    "SCMABCNN": SCMABCNN,
-    "SCMSMASH": SCMSMASH
 }
 
 
