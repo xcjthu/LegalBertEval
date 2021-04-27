@@ -1,8 +1,9 @@
 from model.scm.Bert import SCMBert
-
+from model.scm.ConcatBert import ConcatSCMBert
 
 model_list = {
     "SCMBert": SCMBert,
+    "ConcatSCMBert": ConcatSCMBert,
 }
 
 
