@@ -63,14 +63,29 @@ class MultiTaskLJP(nn.Module):
         y = out['pooler_output']
         result = self.fc(y)
 
-        loss = 0
-        for name in self.keys: #["charge", "law", "term"]:
-            loss += self.criterion[name](result[name], data[name])
+        if mode == "test":
+            output = []
+            result["law"] = torch.softmax(result["law"], dim = 2)
+            if self.ms:
+                result["charge"] = torch.softmax(result["charge"], dim = 1)
+            else:
+                result["charge"] = torch.softmax(result["charge"], dim = 2)
+            for key in result:
+                result[key] = result[key].tolist()
+            for i in range(len(data["uids"])):
+                tmp = {key: result[key][i] for key in result}
+                tmp["uid"] = data["uids"][i]
+                output.append(tmp)
+            return {"loss": 0, "output": output}
+        else:
+            loss = 0
+            for name in self.keys: #["charge", "law", "term"]:
+                loss += self.criterion[name](result[name], data[name])
 
-        if acc_result is None:
-            acc_result = {key: None for key in self.keys}
+            if acc_result is None:
+                acc_result = {key: None for key in self.keys}
 
-        for name in self.keys: #["charge", "law", "term"]:
-            acc_result[name] = self.accuracy_function[name](result[name], data[name], config, acc_result[name])
+            for name in self.keys: #["charge", "law", "term"]:
+                acc_result[name] = self.accuracy_function[name](result[name], data[name], config, acc_result[name])
 
-        return {"loss": loss, "acc_result": acc_result}
+            return {"loss": loss, "acc_result": acc_result}

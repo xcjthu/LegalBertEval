@@ -29,6 +29,9 @@ class JsonFromFilesDataset(Dataset):
             f = open(filename, "r", encoding=encoding)
             docs = json.load(f)
             for doc in docs:
+                if mode == "test":
+                    self.data.append({"fact": doc["SS"], "uid": doc["uid"]})
+                    continue
                 if not self.ms:
                     self.data.append({
                         "fact": doc["SS"],

@@ -37,7 +37,8 @@ class MultiTaskLJPFormatter(BasicFormatter):
             mask.append([1] * len(tokens) + [0] * (self.max_len - len(tokens)))
             tokens += [self.tokenizer.pad_token_id] * (self.max_len - len(tokens))
             inputx.append(tokens)
-
+            if mode == "test":
+                continue
             # temp_charge = np.zeros(len(self.charge2id), dtype=np.int)
             # for c in temp["charge"]:
             #     temp_charge[self.charge2id[str(c)]] = 1
@@ -50,13 +51,21 @@ class MultiTaskLJPFormatter(BasicFormatter):
 
         global_att = np.zeros((len(data), self.max_len), dtype=np.int32)
         global_att[:,0] = 1
-        return {
-            "text": torch.LongTensor(inputx),
-            "mask": torch.LongTensor(mask),
-            "charge": torch.LongTensor(charge),
-            "law": torch.LongTensor(article),
-            "global_att": torch.LongTensor(global_att),
-        }
+        if mode == "test":
+            return {
+                "text": torch.LongTensor(inputx),
+                "mask": torch.LongTensor(mask),
+                "global_att": torch.LongTensor(global_att),
+                "uids": [doc["uid"] for doc in data]
+            }
+        else:
+            return {
+                "text": torch.LongTensor(inputx),
+                "mask": torch.LongTensor(mask),
+                "charge": torch.LongTensor(charge),
+                "law": torch.LongTensor(article),
+                "global_att": torch.LongTensor(global_att),
+            }
 
     def process(self, data, config, mode, *args, **params):
         if self.ms:
@@ -74,6 +83,8 @@ class MultiTaskLJPFormatter(BasicFormatter):
             tokens += [self.tokenizer.pad_token_id] * (self.max_len - len(tokens))
             inputx.append(tokens)
 
+            if mode == "test":
+                continue
             temp_charge = np.zeros(len(self.charge2id), dtype=np.int)
             for c in temp["charge"]:
                 temp_charge[self.charge2id[str(c)]] = 1
@@ -95,11 +106,19 @@ class MultiTaskLJPFormatter(BasicFormatter):
 
         global_att = np.zeros((len(data), self.max_len), dtype=np.int32)
         global_att[:,0] = 1
-        return {
-            "text": torch.LongTensor(inputx),
-            "mask": torch.LongTensor(mask),
-            "charge": torch.LongTensor(charge),
-            "law": torch.LongTensor(article),
-            "term": torch.FloatTensor(term),
-            "global_att": torch.LongTensor(global_att),
-        }
+        if mode == "test":
+            return {
+                "text": torch.LongTensor(inputx),
+                "mask": torch.LongTensor(mask),
+                "global_att": torch.LongTensor(global_att),
+                "uids": [doc["uid"] for doc in data],
+            }
+        else:
+            return {
+                "text": torch.LongTensor(inputx),
+                "mask": torch.LongTensor(mask),
+                "charge": torch.LongTensor(charge),
+                "law": torch.LongTensor(article),
+                "term": torch.FloatTensor(term),
+                "global_att": torch.LongTensor(global_att),
+            }
