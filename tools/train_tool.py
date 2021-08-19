@@ -3,7 +3,6 @@ import os
 import torch
 from torch.autograd import Variable
 from torch.optim import lr_scheduler
-from tensorboardX import SummaryWriter
 import shutil
 from timeit import default_timer as timer
 
@@ -59,8 +58,6 @@ def train(parameters, config, gpu_list, do_test=False, local_rank=-1):
     os.makedirs(os.path.join(config.get("output", "tensorboard_path"), config.get("output", "model_name")),
                 exist_ok=True)
 
-    writer = SummaryWriter(os.path.join(config.get("output", "tensorboard_path"), config.get("output", "model_name")),
-                           config.get("output", "model_name"))
 
     step_size = config.getint("train", "step_size")
     gamma = config.getfloat("train", "lr_multiplier")
@@ -116,7 +113,6 @@ def train(parameters, config, gpu_list, do_test=False, local_rank=-1):
                              "%.3lf" % (total_loss / (step + 1)), output_info, '\r', config)
 
             global_step += 1
-            writer.add_scalar(config.get("output", "model_name") + "_train_iter", float(loss), global_step)
             # if step > 20:
             #     break
 
@@ -134,14 +130,12 @@ def train(parameters, config, gpu_list, do_test=False, local_rank=-1):
         if local_rank <= 0:
             checkpoint(os.path.join(output_path, "%d.pkl" % current_epoch), model, optimizer, current_epoch, config,
                     global_step)
-            writer.add_scalar(config.get("output", "model_name") + "_train_epoch", float(total_loss) / (step + 1),
-                            current_epoch)
 
         if current_epoch % test_time == 0:
             with torch.no_grad():
                 # pass
-                valid(model, parameters["valid_dataset"], current_epoch, writer, config, gpu_list, output_function)
+                valid(model, parameters["valid_dataset"], current_epoch, config, gpu_list, output_function)
                 if do_test:
-                    valid(model, test_dataset, current_epoch, writer, config, gpu_list, output_function, mode="test")
+                    valid(model, test_dataset, current_epoch, config, gpu_list, output_function, mode="test")
         if local_rank >= 0:
             torch.distributed.barrier()
