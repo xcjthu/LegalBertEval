@@ -73,4 +73,5 @@ if __name__ == "__main__":
         do_test = True
 
     print(args.comment)
-    train(parameters, config, gpu_list, do_test, args.local_rank)
+    with torch.autograd.set_detect_anomaly(True):
+        train(parameters, config, gpu_list, do_test, args.local_rank)

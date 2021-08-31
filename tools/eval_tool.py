@@ -94,6 +94,8 @@ def valid(model, dataset, epoch, config, gpu_list, output_function, mode="valid"
     for key in predictions:
         predictions[key].sort(key = lambda x:x[1], reverse = True)
         predictions[key] = [int(res[0]) for res in predictions[key]]
+
+    os.makedirs(config.get("data", "result_path"), exist_ok=True)
     fout = open(os.path.join(config.get("data", "result_path"), "%s-test-%d_epoch-%d.json" % (config.get("output", "model_name"), config.getint("data", "test_file"), epoch)), "w")
     print(json.dumps(predictions), file = fout)
     fout.close()

@@ -1,4 +1,5 @@
 import json
+import random
 import torch
 import os
 import numpy as np
@@ -27,6 +28,26 @@ class LecardFormatter(BasicFormatter):
         self.query_len = config.getint("train", "query_len")
         self.cand_len = config.getint("train", "cand_len")
         self.max_len = self.query_len + self.cand_len + 3
+        self.gat_strategy = config.get("train", "gat_strategy")
+        if self.gat_strategy == "QueryAtt":
+            self.get_gat = self.QueryAtt
+        elif self.gat_strategy == "RandAtt":
+            self.get_gat = self.RandAtt
+        elif self.gat_strategy == "PeriodAtt":
+            self.get_gat = self.PeriodAtt
+    
+    def QueryAtt(self, query, input_ids):
+        ret = [1] * (len(query) + 2)
+        ret += [0] * (len(input_ids) - len(ret))
+        return ret
+    
+    def RandAtt(self, query, input_ids):
+        poses = list(range(len(input_ids)))
+        selected = set(random.sample(poses, len(query)))
+        return [1 if i in selected else 0 for i in range(len(input_ids))]
+    
+    def PeriodAtt(self, query, input_ids):
+        return [1 if token == 511 or token == 8024 else 0 for token in input_ids]
 
     def process(self, data, config, mode, *args, **params):
         inputx = []
@@ -43,13 +64,15 @@ class LecardFormatter(BasicFormatter):
 
             input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
             input_mask = [1] * len(input_ids)
-            gat_mask = [1] * (len(query) + 2)
+            # gat_mask = [1] * (len(query) + 2)
+            gat_mask = self.get_gat(query, input_ids)
 
             padding = [0] * (self.max_len - len(input_ids))
             input_ids += padding
             input_mask += padding
             segment_ids += padding
-            gat_mask += [0] * (self.max_len - len(gat_mask))
+            gat_mask += padding
+            # gat_mask += [0] * (self.max_len - len(gat_mask))
 
             assert len(input_ids) == self.max_len
             assert len(input_mask) == self.max_len
