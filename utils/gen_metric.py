@@ -99,5 +99,5 @@ class Metric:
 
 if __name__ == "__main__":
     met = Metric("/home/xcj/LegalLongPLM/data/LeCaRD-main")
-    # met.pred_path("/home/xcj/LegalLongPLM/results/lecard/Lawformer")
-    met.pred_path("/home/xcj/LegalLongPLM/results/lecard/DimRedBert")
+    met.pred_path("/home/xcj/LegalLongPLM/results/lecard/Lawformer")
+    # met.pred_path("/home/xcj/LegalLongPLM/results/lecard/DimRedBert")
