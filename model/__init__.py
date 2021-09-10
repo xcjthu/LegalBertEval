@@ -1,7 +1,7 @@
-from model.ljp.MultiTaskLJP import MultiTaskLJP
+from .ljp.LawPrediction import LawPrediction
 
 model_list = {
-    "MultiTaskLJP": MultiTaskLJP,
+    "law": LawPrediction,
 }
 
 

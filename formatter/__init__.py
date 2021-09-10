@@ -1,11 +1,11 @@
 import logging
 
-from formatter.ljp.MultiTaskLJPFormatter import MultiTaskLJPFormatter
+from .LawFormatter import LawFormatter
 
 logger = logging.getLogger(__name__)
 
 formatter_list = {
-    "MultiTaskLJP": MultiTaskLJPFormatter,
+    "law": LawFormatter,
 }
 
 
