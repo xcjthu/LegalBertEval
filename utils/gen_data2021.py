@@ -6,16 +6,16 @@ from tqdm import tqdm
 class LawMapper:
     def __init__(self):
         mapper = json.load(open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/lawmap/mapping.json", "r"))
-        self.mapper = {json.dumps(pair["origin"], ensure_ascii=False): json.dumps(pair["target"], ensure_ascii=False) for pair in mapper}
+        # self.mapper = {json.dumps(pair["origin"], ensure_ascii=False): json.dumps(pair["target"], ensure_ascii=False) for pair in mapper}
         self.common_used_numerals_tmp = {"〇": 0, '零':0, '一':1, '二':2, '两':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9, '十':10, '百':100, '千':1000, '万':10000, '亿':100000000}
         self.cared_law = {json.dumps(law, ensure_ascii = False) for law in json.load(open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/labels/usedlaws.json", "r"))}
         self.tk = re.compile(r"第?[零一二三四五六七八九十百0-9]+条(?:第?（?[零一二三四五六七八九十百0-9]）?[项款]){0,2}、?")
 
     def map_law(self, lawin):
         key = json.dumps(lawin, ensure_ascii=False)
-        if key in self.mapper:
-            return json.loads(self.mapper[key])
-        elif key in self.cared_law:
+        # if key in self.mapper:
+        #     return json.loads(self.mapper[key])
+        if key in self.cared_law:
             return lawin
         else:
             return None
@@ -85,8 +85,8 @@ if __name__ == "__main__":
     path = "/data2/private/xcj/PrivateLendingData/mjjd_data"
     total = 0
     lawMapper = LawMapper()
+    data = []
     for i in range(20):
-        data = []
         print("thread_%s" % i)
         for fn in tqdm(os.listdir(os.path.join(path, "thread_%s" % i))):
             if not fn[-5:] == "jsonl":
@@ -94,7 +94,7 @@ if __name__ == "__main__":
             fin = open(os.path.join(path, "thread_%s" % i, fn), "r")
             for line in fin:
                 case = json.loads(line)
-                if (not case["attrs"]["judgement_date"] is None) and case["attrs"]["judgement_date"][:4] not in {"2019", "2020"}:
+                if (not case["attrs"]["judgement_date"] is None) and case["attrs"]["judgement_date"][:4] != "2021":
                     continue
                 if (not case["attrs"]["judgement_type"] == "判决"):
                     continue
@@ -105,8 +105,6 @@ if __name__ == "__main__":
                     data.append(case)
         print(len(data), total)
 
-        fout = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/case_mapper/case%s.json" % i, "w")
-        print(json.dumps(data, ensure_ascii=False, indent=2), file=fout)
-        fout.close()
-        del data
-
+fout = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/cases.json", "w")
+print(json.dumps(data, ensure_ascii=False, indent=2), file=fout)
+fout.close()

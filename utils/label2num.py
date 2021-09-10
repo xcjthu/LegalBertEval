@@ -1,4 +1,6 @@
 import json
+import os
+from tqdm import tqdm
 
 def num2cn(num):
     dic_shu = "零一二三四五六七八九十"
@@ -31,12 +33,23 @@ def read_labels():
     return law2num
 law2num = read_labels()
 
-dpath = "/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/cases.json"
-fin = open(dpath, "r")
-for case in json.load(fin):
-    for l in case["reflaw"]:
-        law2num["%s-%s" % (l["law"], l["tk"])] += 1
 
-fout = open("law2num.json", "w")
+path = "/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/case_mapper"
+for i in range(21):
+    if i == 20:
+        fin = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/cases.json", "r")
+    else:
+        fin = open(os.path.join(path, "case%s.json" % i), "r")
+    for case in tqdm(json.load(fin)):
+        for law in case["reflaw"]:
+            tk = "第%s条第%s款" % (num2cn(law["tiao"]), num2cn(law["kuan"])) if law["kuan"] != 0 else "第%s条" % num2cn(law["tiao"])
+            tk = tk.replace("第一十", "第十")
+            key = "%s-%s" % (law["law"], tk)
+            if key not in law2num:
+                law2num[key] = 0
+            law2num[key] += 1
+
+
+fout = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/labels/law2num.json", "w")
 print(json.dumps(dict(sorted(law2num.items(), key=lambda x:x[1], reverse=True)), ensure_ascii=False, indent=2), file=fout)
 fout.close()

@@ -29,7 +29,9 @@ def num2cn(num):
 def read_labels():
     ret = {}
     fin = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/labels/usedlaws.json", "r")
-    for law in json.load(fin):
+    # fin = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/lawmap/mapping.json", "r")
+    alllaws = json.load(fin) + [law["target"] for law in json.load(open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/lawmap/mapping.json", "r"))]
+    for law in alllaws:
         tk = "第%s条第%s款" % (num2cn(law["tiao"]), num2cn(law["kuan"])) if law["kuan"] != 0 else "第%s条" % num2cn(law["tiao"])
         tk = tk.replace("第一十", "第十")
         if law["law"] not in ret:
@@ -51,7 +53,7 @@ for i in range(20):
         fin = open(os.path.join(path, "thread_%s" % i, fn), "r")
         for line in fin:
             case = json.loads(line)
-            if (not case["attrs"]["judgement_date"] is None) and case["attrs"]["judgement_date"][:4] != "2021":
+            if (not case["attrs"]["judgement_date"] is None) and case["attrs"]["case_no"][1:5] != "2021":
                 continue
             if (not case["attrs"]["judgement_type"] == "判决"):
                 continue
