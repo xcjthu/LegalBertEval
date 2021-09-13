@@ -80,9 +80,10 @@ class Metric:
             if modelname not in res:
                 res[modelname] = {}
             if tfile not in res[modelname]:
-                res[modelname][tfile] = {"MAP": -1}
+                res[modelname][tfile] = {"MAP": -1, "best": -1}
             if metric["MAP"] > res[modelname][tfile]["MAP"]:
                 res[modelname][tfile] = metric
+                res[modelname][tfile]["best"] = epoch
         for model in res:
             overall = {}
             for tf in res[model]:

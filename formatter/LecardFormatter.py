@@ -1,6 +1,5 @@
 import enum
 import json
-from posixpath import join
 import random
 import torch
 import os
@@ -42,8 +41,6 @@ class LecardFormatter(BasicFormatter):
             self.get_gat = self.PeriodAtt
         elif self.gat_strategy == "TfidfAtt":
             self.get_gat = self.TfidfAtt
-            if mode != "train":
-                return
             tfidf = joblib.load("/home/xcj/LegalLongPLM/lecard/tfidf.joblib")
             self.idfs = {v: tfidf.idf_[tfidf.vocabulary_[v]] for v in tqdm(tfidf.vocabulary_.keys())}
     
@@ -142,56 +139,41 @@ class LecardFormatter(BasicFormatter):
         ctokens = list(jieba.cut(ctext))
         
         qtfidf, ctfidf = self.cal_tfidf(qtokens, ctokens)
-        qsort = sorted(qtfidf.items(), key=lambda x:x[1], reverse=True)
-        csort = sorted(ctfidf.items(), key=lambda x:x[1], reverse=True)
-        qgtoken = set()
-        totalqglen = 0
-        for token in qsort:
-            totalqglen += len(self.tokenizer.tokenize(token[0]))
-            if totalqglen > self.query_len * 0.3:
-                break
-            qgtoken.add(token[0])
-        
-        cgtoken = set()
-        totalcglen = 0
-        for token in csort:
-            totalcglen += len(self.tokenizer.tokenize(token[0]))
-            if totalcglen > self.query_len - totalqglen:
-                break
-            cgtoken.add(token[0])
-        # qgtoken = {token[0] for token in qsort[:int(min(self.query_len, len(qtext)) * 0.3)]}
-        # cgtoken = {token[0] for token in csort[:min(self.query_len, len(qtext)) - len(qgtoken)]}
 
         qids = [] # self.tokenizer.tokenize(token) for token in qtokens]
-        qgat = []
+        qgatprob = []
         for token in qtokens:
             tids = self.tokenizer.tokenize(token)
             qids += tids
-            if token in qgtoken:
-                qgat += [1] * len(tids)
-            else:
-                qgat += [0] * len(tids)
+            qgatprob += [qtfidf[token]] * len(tids)
+        qids, qgatprob = qids[:self.query_len], qgatprob[:self.query_len]
+
         cids = [] # self.tokenizer.tokenize(token) for token in ctokens]
-        cgat = []
+        cgatprob = []
         for token in ctokens:
             tids = self.tokenizer.tokenize(token)
             cids += tids
-            if token in cgtoken:
-                cgat += [1] * len(tids)
-            else:
-                cgat += [0] * len(tids)
-        
-        input_ids = ["[CLS]"] + qids[:self.query_len] + ["[SEP]"] + cids[:self.cand_len] + ["[SEP]"]
-        gat = [1] + qgat[:self.query_len] + [1] + cgat[:self.cand_len] + [1]
+            cgatprob += [ctfidf[token]] * len(tids)
+        cids, cgatprob = cids[:self.cand_len], cgatprob[:self.cand_len]
 
-        print("==" * 20)
-        print("good token in query", qgtoken)
-        print("good token in cand", cgtoken)
-        print("query", qtext)
-        print("candidate", ctext)
-        print(gat)
-        print([input_ids[i] for i in range(len(input_ids)) if gat[i] == 1])
-        return self.tokenizer.convert_tokens_to_ids(input_ids), gat
+        input_ids = ["[CLS]"] + qids + ["[SEP]"] + cids + ["[SEP]"]
+        qgatprob, cgatprob = np.array(qgatprob), np.array(cgatprob)
+        qpos = np.random.choice(list(range(len(qids))), size = int(len(qids) * 0.4), p=qgatprob/qgatprob.sum())
+        cpos = np.random.choice(list(range(len(cids))), size = len(qids) - len(qpos), p=cgatprob/cgatprob.sum())
+
+        qgat = np.zeros(len(qids))
+        qgat[qpos] = 1
+        cgat = np.zeros(len(cids))
+        cgat[cpos] = 1
+        gat = [1] + qgat.tolist() + [1] + cgat.tolist() + [1]
+        
+        segment_ids = [0] * (len(qids) + 2) + [1] * (len(cids) + 1)
+
+        # print("==" * 20)
+        # print("query", qtext)
+        # print("candidate", ctext)
+        # print([input_ids[i] for i in range(len(input_ids)) if gat[i] == 1])
+        return self.tokenizer.convert_tokens_to_ids(input_ids), gat, segment_ids
 
     def process(self, data, config, mode, *args, **params):
         inputx = []
@@ -208,7 +190,7 @@ class LecardFormatter(BasicFormatter):
 
             input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
             if self.gat_strategy == "TfidfAtt":
-                input_ids, gat_mask = self.get_gat(temp["query"], temp["cand"])
+                input_ids, gat_mask, segment_ids = self.get_gat(temp["query"], temp["cand"])
             else:
                 gat_mask = self.get_gat(query, input_ids)
             input_mask = [1] * len(input_ids)
