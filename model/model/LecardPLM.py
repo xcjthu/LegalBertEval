@@ -6,7 +6,7 @@ import json
 from transformers import BertModel, AutoModel, AutoConfig
 from model.DimReduction.DimRedBERT import DimRedBertModel
 from tools.accuracy_tool import multi_label_accuracy, single_label_top1_accuracy
-from transformers import LongformerModel
+from model.LongformerSentID.LongformerSentID import LongformerSentIDModel
 
 class LecardPLM(nn.Module):
     def __init__(self, config, gpu_list, *args, **params):
@@ -17,7 +17,7 @@ class LecardPLM(nn.Module):
             self.encoder = DimRedBertModel.from_pretrained(plm_path)
             self.plm_config = self.encoder.config
         else:
-            self.encoder = AutoModel.from_pretrained(plm_path)#, mirror="tuna")
+            self.encoder = LongformerSentIDModel.from_pretrained(plm_path)#, mirror="tuna")
             self.plm_config = AutoConfig.from_pretrained(plm_path)
         self.lfm = 'Longformer' in self.plm_config.architectures[0]
 
