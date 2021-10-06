@@ -17,7 +17,7 @@ class LecardPLM(nn.Module):
             self.encoder = DimRedBertModel.from_pretrained(plm_path)
             self.plm_config = self.encoder.config
         else:
-            self.encoder = LongformerSentIDModel.from_pretrained(plm_path)#, mirror="tuna")
+            self.encoder = LongformerSentIDModel.from_pretrained(plm_path, output_hidden_states=False)#, mirror="tuna")
             self.plm_config = AutoConfig.from_pretrained(plm_path)
         self.lfm = 'Longformer' in self.plm_config.architectures[0]
 
