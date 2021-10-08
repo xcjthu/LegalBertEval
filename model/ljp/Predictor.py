@@ -18,10 +18,10 @@ class LJPPredictor(nn.Module):
         label2id = json.load(open(config.get("data", "label2id"), "r"))
         if self.ms:
             self.charge_fc = nn.Linear(self.hidden_size, len(label2id["ac"]))
-            self.article_fc = nn.Linear(self.hidden_size, len(label2id["law"]) * 2)
+            self.article_fc = nn.Linear(self.hidden_size, len(label2id["laws"]) * 2)
         else:
             self.charge_fc = nn.Linear(self.hidden_size, len(label2id["charge"]) * 2)
-            self.article_fc = nn.Linear(self.hidden_size, len(label2id["law"]) * 2)
+            self.article_fc = nn.Linear(self.hidden_size, len(label2id["laws"]) * 2)
             self.term_fc = nn.Linear(self.hidden_size, 1)
 
     def init_multi_gpu(self, device, config, *args, **params):

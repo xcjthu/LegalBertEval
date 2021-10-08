@@ -32,7 +32,7 @@ class MultiTaskLJP(nn.Module):
         if self.ms:
             self.criterion = {
                 "charge": nn.CrossEntropyLoss(), # MultiLabelSoftmaxLoss(config, len(label2id["charge"])),
-                "law": MultiLabelSoftmaxLoss(config, len(label2id["law"])),
+                "law": MultiLabelSoftmaxLoss(config, len(label2id["laws"])),
             }
             self.accuracy_function = {
                 "charge": single_label_top1_accuracy,
@@ -41,7 +41,7 @@ class MultiTaskLJP(nn.Module):
         else:
             self.criterion = {
                 "charge": MultiLabelSoftmaxLoss(config, len(label2id["charge"])),
-                "law": MultiLabelSoftmaxLoss(config, len(label2id["law"])),
+                "law": MultiLabelSoftmaxLoss(config, len(label2id["laws"])),
                 "term": log_square_loss
             }
             self.accuracy_function = {

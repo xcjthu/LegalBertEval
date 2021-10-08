@@ -30,18 +30,18 @@ class JsonFromFilesDataset(Dataset):
             docs = json.load(f)
             for doc in docs:
                 if mode == "test":
-                    self.data.append({"fact": doc["SS"], "uid": doc["uid"]})
+                    self.data.append({"fact": doc["fact"], "uid": doc["uid"]})
                     continue
                 if not self.ms:
                     self.data.append({
-                        "fact": doc["SS"],
-                        "charge": doc["crime"],
-                        "laws": ["%s_%s" % (law[0], law[1]) for law in doc["related_laws"]],
+                        "fact": doc["fact"],
+                        "charge": doc["charge"],
+                        "laws": [json.dumps(l, ensure_ascii=False, sort_keys=True) for l in doc["laws"]], # ["%s_%s" % (law[0], law[1]) for law in doc["related_laws"]],
                         "imprisonment": doc["term_of_imprisonment"]
                     })
                 else:
                     self.data.append({
-                        "fact": doc["SS"],
+                        "fact": doc["fact"],
                         "charge": doc["actioncause"],
                         "laws": ["%s_%s" % (law[0], law[1]) for law in doc["related_laws"]],
                     })

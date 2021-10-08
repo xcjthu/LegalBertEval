@@ -23,7 +23,7 @@ class MultiTaskLJPFormatter(BasicFormatter):
 
         label2id = json.load(open(config.get("data", "label2id"), "r"))
         self.charge2id = label2id["ac"] if self.ms else label2id["charge"]
-        self.article2id = label2id["law"]
+        self.article2id = label2id["laws"]
     
     def process_ms(self, data, config, mode):
         inputx = []
