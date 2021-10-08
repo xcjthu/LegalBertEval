@@ -1,9 +1,10 @@
 from .model.LecardPLM import LecardPLM
 from .model.PairwiseLecardPLM import PairwisePLM
-
+from .MemBERT.RecurrentTrans import RecurrentTransInf
 model_list = {
     "lecard": LecardPLM,
     "pairwise": PairwisePLM,
+    "recurrent": RecurrentTransInf,
 }
 
 def get_model(model_name):

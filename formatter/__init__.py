@@ -3,12 +3,15 @@ import logging
 from .Basic import BasicFormatter
 from .LecardFormatter import LecardFormatter
 from .PairwiseFormatter import PairwiseFormatter
+from .RecurrentFormatter import RecurrentFormatter
+
 logger = logging.getLogger(__name__)
 
 formatter_list = {
     "Basic": BasicFormatter,
     "lecard": LecardFormatter,
     "pairwise": PairwiseFormatter,
+    "recurrent": RecurrentFormatter
 }
 
 
