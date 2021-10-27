@@ -3,7 +3,7 @@ import os
 import torch
 from torch.autograd import Variable
 from torch.optim import lr_scheduler
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 from timeit import default_timer as timer
 
 logger = logging.getLogger(__name__)
@@ -45,8 +45,9 @@ def output_value(epoch, mode, step, time, loss, info, end, config):
         print(s)
 
 
-def valid(model, dataset, epoch, writer, config, gpu_list, output_function, mode="valid"):
+def valid(model, dataset, epoch, config, gpu_list, output_function, mode="valid"):
     model.eval()
+    local_rank = config.getint('distributed', 'local_rank')
 
     acc_result = None
     total_loss = 0
@@ -75,24 +76,42 @@ def valid(model, dataset, epoch, writer, config, gpu_list, output_function, mode
         total_loss += float(loss)
         cnt += 1
 
-        if step % output_time == 0:
+        if step % output_time == 0 and local_rank <= 0:
             delta_t = timer() - start_time
 
             output_value(epoch, mode, "%d/%d" % (step + 1, total_len), "%s/%s" % (
                 gen_time_str(delta_t), gen_time_str(delta_t * (total_len - step - 1) / (step + 1))),
                          "%.3lf" % (total_loss / (step + 1)), output_info, '\r', config)
+        # if step >= 20:
+        #     break
 
     if step == -1:
         logger.error("There is no data given to the model in this epoch, check your data.")
         raise NotImplementedError
 
-    delta_t = timer() - start_time
-    output_info = output_function(acc_result, config)
-    output_value(epoch, mode, "%d/%d" % (step + 1, total_len), "%s/%s" % (
-        gen_time_str(delta_t), gen_time_str(delta_t * (total_len - step - 1) / (step + 1))),
-                 "%.3lf" % (total_loss / (step + 1)), output_info, None, config)
+    if config.getboolean("distributed", "use"):
+        dict_acc_result = {"%d-%s" % (i, key): acc_result[i][key] for i in range(len(acc_result)) for key in acc_result[i]}
+        shape = len(dict_acc_result) + 1
+        mytensor = torch.FloatTensor([total_loss] + [dict_acc_result[key] for key in dict_acc_result]).to(gpu_list[local_rank])
+        mylist = [torch.FloatTensor(shape).to(gpu_list[local_rank]) for i in range(config.getint('distributed', 'gpu_num'))]
+        torch.distributed.all_gather(mylist, mytensor)#, 0)
+        if local_rank == 0:
+            mytensor = sum(mylist)
+            total_loss = float(mytensor[0]) / config.getint('distributed', 'gpu_num')
+            index = 1
+            for key in dict_acc_result:
+                dict_acc_result[key] = int(mytensor[index])
+                acc_result[int(key.split("-")[0])][key.split("-")[1]] = dict_acc_result[key]
+                index += 1
 
-    writer.add_scalar(config.get("output", "model_name") + "_eval_epoch", float(total_loss) / (step + 1),
-                      epoch)
+    if local_rank <= 0:
+        delta_t = timer() - start_time
+        output_info = output_function(acc_result, config)
+        output_value(epoch, mode, "%d/%d" % (step + 1, total_len), "%s/%s" % (
+            gen_time_str(delta_t), gen_time_str(delta_t * (total_len - step - 1) / (step + 1))),
+                    "%.3lf" % (total_loss / (step + 1)), output_info, None, config)
 
-    model.train()
+    # writer.add_scalar(config.get("output", "model_name") + "_eval_epoch", float(total_loss) / (step + 1),
+    #                   epoch)
+
+    # model.train()

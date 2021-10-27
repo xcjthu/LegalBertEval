@@ -10,6 +10,7 @@ class LawDataset(Dataset):
         data = json.load(open(self.data_path, "r"))
         self.label2id = json.load(open(config.get("data", "label2id"), "r"))
         self.data = []
+        average_label_num = 0
         for doc in data:
             text = None
             for seg in doc["segments"]:
@@ -22,7 +23,9 @@ class LawDataset(Dataset):
             label = [l for l in label if l in self.label2id]
             if len(label) == 0:
                 continue
+            average_label_num += len(label)
             self.data.append({"inp": text, "label": label})
+        print(len(self.data), average_label_num / len(data))
 
     def num2cn(self, num):
         dic_shu = "零一二三四五六七八九十"

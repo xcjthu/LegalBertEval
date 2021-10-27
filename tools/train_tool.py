@@ -3,7 +3,7 @@ import os
 import torch
 from torch.autograd import Variable
 from torch.optim import lr_scheduler
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 import shutil
 from timeit import default_timer as timer
 
@@ -20,7 +20,8 @@ def checkpoint(filename, model, optimizer, trained_epoch, config, global_step):
         "optimizer_name": config.get("train", "optimizer"),
         "optimizer": optimizer.state_dict(),
         "trained_epoch": trained_epoch,
-        "global_step": global_step
+        "global_step": global_step,
+        # "lr_scheduler": lr_scheduler.state_dict(),
     }
 
     try:
@@ -29,7 +30,7 @@ def checkpoint(filename, model, optimizer, trained_epoch, config, global_step):
         logger.warning("Cannot save models with error %s, continue anyway" % str(e))
 
 
-def train(parameters, config, gpu_list, do_test=False):
+def train(parameters, config, gpu_list, do_test=False, local_rank=-1):
     epoch = config.getint("train", "epoch")
     batch_size = config.getint("train", "batch_size")
 
@@ -59,8 +60,8 @@ def train(parameters, config, gpu_list, do_test=False):
     os.makedirs(os.path.join(config.get("output", "tensorboard_path"), config.get("output", "model_name")),
                 exist_ok=True)
 
-    writer = SummaryWriter(os.path.join(config.get("output", "tensorboard_path"), config.get("output", "model_name")),
-                           config.get("output", "model_name"))
+    # writer = SummaryWriter(os.path.join(config.get("output", "tensorboard_path"), config.get("output", "model_name")),
+    #                        config.get("output", "model_name"))
 
     step_size = config.getint("train", "step_size")
     gamma = config.getfloat("train", "lr_multiplier")
@@ -78,6 +79,7 @@ def train(parameters, config, gpu_list, do_test=False):
         more = "\t"
     for epoch_num in range(trained_epoch, epoch):
         start_time = timer()
+        model.train()
         current_epoch = epoch_num
         exp_lr_scheduler.step(current_epoch)
 
@@ -99,14 +101,14 @@ def train(parameters, config, gpu_list, do_test=False):
 
             loss, acc_result = results["loss"], results["acc_result"]
             total_loss += float(loss)
-            
+
             loss.backward()
             if (step + 1) % grad_accumulate == 0:
                 optimizer.step()
                 optimizer.zero_grad()
             #optimizer.step()
 
-            if step % output_time == 0:
+            if step % output_time == 0 and local_rank <= 0:
                 output_info = output_function(acc_result, config)
 
                 delta_t = timer() - start_time
@@ -114,24 +116,31 @@ def train(parameters, config, gpu_list, do_test=False):
                 output_value(current_epoch, "train", "%d/%d" % (step + 1, total_len), "%s/%s" % (
                     gen_time_str(delta_t), gen_time_str(delta_t * (total_len - step - 1) / (step + 1))),
                              "%.3lf" % (total_loss / (step + 1)), output_info, '\r', config)
+            # if step >= 20:
+            #     break
 
             global_step += 1
-            writer.add_scalar(config.get("output", "model_name") + "_train_iter", float(loss), global_step)
-        output_value(current_epoch, "train", "%d/%d" % (step + 1, total_len), "%s/%s" % (
-            gen_time_str(delta_t), gen_time_str(delta_t * (total_len - step - 1) / (step + 1))),
-                     "%.3lf" % (total_loss / (step + 1)), output_info, None, config)
+            # writer.add_scalar(config.get("output", "model_name") + "_train_iter", float(loss), global_step)
+
 
         if step == -1:
             logger.error("There is no data given to the model in this epoch, check your data.")
             raise NotImplementedError
+        
+        if local_rank <= 0:
+            output_info = output_function(acc_result, config)
+            delta_t = timer() - start_time
+            output_value(current_epoch, "train", "%d/%d" % (step + 1, total_len), "%s/%s" % (
+                gen_time_str(delta_t), gen_time_str(delta_t * (total_len - step - 1) / (step + 1))),
+                        "%.3lf" % (total_loss / (step + 1)), output_info, None, config)
 
-        checkpoint(os.path.join(output_path, "%d.pkl" % current_epoch), model, optimizer, current_epoch, config,
-                   global_step)
-        writer.add_scalar(config.get("output", "model_name") + "_train_epoch", float(total_loss) / (step + 1),
-                          current_epoch)
+        if local_rank <= 0:
+            checkpoint(os.path.join(output_path, "%d.pkl" % current_epoch), model, optimizer, current_epoch, config, global_step)
+        # writer.add_scalar(config.get("output", "model_name") + "_train_epoch", float(total_loss) / (step + 1),
+        #                   current_epoch)
 
         if current_epoch % test_time == 0:
             with torch.no_grad():
-                valid(model, parameters["valid_dataset"], current_epoch, writer, config, gpu_list, output_function)
+                valid(model, parameters["valid_dataset"], current_epoch, config, gpu_list, output_function)
                 if do_test:
-                    valid(model, test_dataset, current_epoch, writer, config, gpu_list, output_function, mode="test")
+                    valid(model, test_dataset, current_epoch, config, gpu_list, output_function, mode="test")

@@ -26,24 +26,24 @@ def num2cn(num):
     return hz
 
 
-label2num = json.load(open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/labels/law2num.json", "r"))
+label2num = json.load(open("/home/ubuntu/mnt/LawPrediction/LawPrediction/data/labels/law2num.json", "r"))
 label2id = {}
 for key in label2num:
     if label2num[key] < 15 or key == "民法典-第六百七十五条":
         continue
     label2id[key] = len(label2id)
 
-fout = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/final_data/label2id.json", "w")
+fout = open("/home/ubuntu/mnt/LawPrediction/LawPrediction/data/final_data/label2id.json", "w")
 print(json.dumps(label2id, ensure_ascii=False, indent=2), file=fout)
 fout.close()
 
 
-path = "/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/case_mapper"
+path = "/home/ubuntu/mnt/LawPrediction/LawPrediction/data/case_mapper"
 label2caseid = {key: [] for key in label2id}
 for i in range(21):
     print(i)
     if i == 20:
-        fin = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/cases.json", "r")
+        fin = open("/home/ubuntu/mnt/LawPrediction/LawPrediction/data/cases.json", "r")
     else:
         fin = open(os.path.join(path, "case%s.json" % i), "r")
     for cid, case in enumerate(json.load(fin)):
@@ -56,27 +56,27 @@ for i in range(21):
 
 caseids = set()
 for key in label2caseid:
-    if len(label2caseid[key]) < 3000:
+    if len(label2caseid[key]) < 1000:
         samples = label2caseid[key]
     else:
-        samples = random.sample(label2caseid[key], 3000)
+        samples = random.sample(label2caseid[key], 1000)
     caseids.update(samples)
 
 print("the final number of cases", len(caseids))
 cases = [[] for i in range(21)]
 for c in caseids:
     cases[c[0]].append(c[1])
-path = "/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/case_mapper"
+path = "/home/ubuntu/mnt/LawPrediction/LawPrediction/data/case_mapper"
 gcases = []
 for i in range(21):
     if i == 20:
-        fin = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/cases.json", "r")
+        fin = open("/home/ubuntu/mnt/LawPrediction/LawPrediction/data/cases.json", "r")
     else:
         fin = open(os.path.join(path, "case%s.json" % i), "r")
     tmpcase = json.load(fin)
     for cid in cases[i]:
         gcases.append({"segments": tmpcase[cid]["segments"], "reflaw": tmpcase[cid]["reflaw"], "attrs": tmpcase[cid]["attrs"]})
 
-fout = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/final_data/final_cases.json", "w")
+fout = open("/home/ubuntu/mnt/LawPrediction/LawPrediction/data/final_data/final_cases.json", "w")
 print(json.dumps(gcases, ensure_ascii=False, indent=2), file=fout)
 fout.close()

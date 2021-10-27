@@ -28,15 +28,16 @@ def init_all(config, gpu_list, checkpoint, mode, *args, **params):
     global_step = 0
 
     if len(gpu_list) > 0:
-        model = model.cuda()
-
+        if params['local_rank'] < 0:
+            model = model.cuda()
+        else:
+            model = model.to(gpu_list[params['local_rank']])
         try:
-            model.init_multi_gpu(gpu_list, config, *args, **params)
+            model = nn.parallel.DistributedDataParallel(model, device_ids = [params['local_rank']], find_unused_parameters = True)
         except Exception as e:
             logger.warning("No init_multi_gpu implemented in the model, use single gpu instead.")
-
     try:
-        parameters = torch.load(checkpoint)
+        parameters = torch.load(checkpoint, map_location=lambda storage, loc: storage)
         model.load_state_dict(parameters["model"])
 
         if mode == "train":

@@ -24,8 +24,8 @@ def num2cn(num):
         i += 1
     return hz
 
-cases = json.load(open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/final_data/final_cases.json", "r"))
-label2id = json.load(open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/final_data/label2id.json", "r"))
+cases = json.load(open("/home/ubuntu/mnt/LawPrediction/LawPrediction/data/final_data/final_cases.json", "r"))
+label2id = json.load(open("/home/ubuntu/mnt/LawPrediction/LawPrediction/data/final_data/label2id.json", "r"))
 
 Xtext = [c["segments"] for c in cases]
 X = np.arange(len(Xtext))
@@ -43,10 +43,10 @@ for cid, c in enumerate(cases):
 X_train, y_train, X_test, y_test = iterative_train_test_split(X, Y, test_size = 0.15)
 case_train = [cases[x[0]] for x in X_train]
 case_test = [cases[x[0]] for x in X_test]
-fout = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/final_data/train.json", "w")
+fout = open("/home/ubuntu/mnt/LawPrediction/LawPrediction/data/final_data/train.json", "w")
 print(json.dumps(case_train, ensure_ascii=False, indent=2), file=fout)
 fout.close()
 
-fout = open("/data/disk1/private/xcj/MJJDInfoExtract/LawPrediction/data/final_data/test.json", "w")
+fout = open("/home/ubuntu/mnt/LawPrediction/LawPrediction/data/final_data/test.json", "w")
 print(json.dumps(case_test, ensure_ascii=False, indent=2), file=fout)
 fout.close()
