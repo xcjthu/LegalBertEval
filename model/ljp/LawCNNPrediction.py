@@ -53,26 +53,23 @@ class LawCNNPrediction(nn.Module):
 
         label2id = json.load(open(config.get("data", "label2id"), "r"))
         self.fc = nn.Linear(self.hidden_size, len(label2id) * 2)
-
+        self.criterion = MultiLabelSoftmaxLoss(config, len(label2id))
         self.accuracy_function = multi_label_accuracy
 
     def forward(self, data, config, gpu_list, acc_result, mode):
         x = data['text']
         batch = x.shape[0]
-        if self.lfm:
-            out = self.encoder(x, attention_mask = data['mask'], global_attention_mask = data["global_att"])
-        else:
-            out = self.encoder(x, attention_mask = data['mask'])
-        y = out['pooler_output']
-        # result = self.fc(y).view(batch, -1, 2)
-        result = self.fc(y).view(batch, -1)
-        if mode == "train":
-            result = result - 100 * data["label_mask"]
-            loss = self.criterion(result, data["label"])
-            acc_result = self.accuracy_function(reshape(result), data["alllabel"], config, acc_result)
-        else:
-            loss = 0
-            acc_result = self.accuracy_function(reshape(result), data["alllabel"], config, acc_result)
+        inp = self.embedding(x)
+        y = self.encoder(inp)
+    
+        result = self.fc(y).view(batch, -1, 2)
+        # if mode == "train":
+        #     # result = result - 100 * data["label_mask"]
+        loss = self.criterion(result, data["label"])
+        acc_result = self.accuracy_function(result, data["label"], config, acc_result)
+        # else:
+        #     loss = 0
+        #     acc_result = self.accuracy_function(reshape(result), data["alllabel"], config, acc_result)
 
         return {"loss": loss, "acc_result": acc_result}
 

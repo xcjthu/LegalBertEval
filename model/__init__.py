@@ -1,7 +1,9 @@
 from .ljp.LawPrediction import LawPrediction
+from .ljp.LawCNNPrediction import LawCNNPrediction
 
 model_list = {
     "law": LawPrediction,
+    "cnn": LawCNNPrediction,
 }
 
 
