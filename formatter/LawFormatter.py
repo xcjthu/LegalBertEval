@@ -16,7 +16,12 @@ class LawFormatter(BasicFormatter):
         self.max_len = config.getint("train", "max_len")
         self.mode = mode
 
-        self.label2id = json.load(open(config.get("data", "label2id"), "r"))
+        # self.label2id = json.load(open(config.get("data", "label2id"), "r"))
+        alll2id = json.load(open(config.get("data", "label2id"), "r"))
+        self.label2id = {}
+        for key in alll2id:
+            if alll2id[key] <=  100:
+                self.label2id[key] = len(self.label2id)
 
     def process(self, data, config, mode, *args, **params):
         inputx = []
@@ -43,7 +48,7 @@ class LawFormatter(BasicFormatter):
             "text": torch.LongTensor(inputx),
             "mask": torch.LongTensor(mask),
             "global_att": torch.LongTensor(global_att),
-            "alllabel": torch.LongTensor(alllaws),
-            "label": torch.LongTensor(labels),
-            "label_mask": torch.LongTensor(label_mask),
+            # "alllabel": torch.LongTensor(alllaws),
+            "label": torch.LongTensor(alllaws),
+            # "label_mask": torch.LongTensor(label_mask),
         }

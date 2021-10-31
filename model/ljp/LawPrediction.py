@@ -19,12 +19,18 @@ class LawPrediction(nn.Module):
 
         self.hidden_size = self.plm_config.hidden_size
 
-        label2id = json.load(open(config.get("data", "label2id"), "r"))
-        # self.fc = nn.Linear(self.hidden_size, len(label2id) * 2)
-        self.fc = nn.Linear(self.hidden_size, len(label2id))
+        # label2id = json.load(open(config.get("data", "label2id"), "r"))
+        alll2id = json.load(open(config.get("data", "label2id"), "r"))
+        # label2id = json.load(open(config.get("data", "label2id"), "r"))
+        label2id = {}
+        for key in alll2id:
+            if alll2id[key] <=  100:
+                label2id[key] = len(label2id)
+        self.fc = nn.Linear(self.hidden_size, len(label2id) * 2)
+        # self.fc = nn.Linear(self.hidden_size, len(label2id))
 
-        # self.criterion = MultiLabelSoftmaxLoss(config, len(label2id))
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = MultiLabelSoftmaxLoss(config, len(label2id))
+        # self.criterion = nn.CrossEntropyLoss()
         self.accuracy_function = multi_label_accuracy
 
     def forward(self, data, config, gpu_list, acc_result, mode):
@@ -35,15 +41,15 @@ class LawPrediction(nn.Module):
         else:
             out = self.encoder(x, attention_mask = data['mask'])
         y = out['pooler_output']
-        # result = self.fc(y).view(batch, -1, 2)
-        result = self.fc(y).view(batch, -1)
-        if mode == "train":
-            result = result - 100 * data["label_mask"]
-            loss = self.criterion(result, data["label"])
-            acc_result = self.accuracy_function(reshape(result), data["alllabel"], config, acc_result)
-        else:
-            loss = 0
-            acc_result = self.accuracy_function(reshape(result), data["alllabel"], config, acc_result)
+        result = self.fc(y).view(batch, -1, 2)
+        # result = self.fc(y).view(batch, -1)
+        # if mode == "train":
+        #     result = result - 100 * data["label_mask"]
+        loss = self.criterion(result, data["label"])
+        acc_result = self.accuracy_function(result, data["label"], config, acc_result)
+        # else:
+        #     loss = 0
+        #     acc_result = self.accuracy_function(reshape(result), data["alllabel"], config, acc_result)
 
         return {"loss": loss, "acc_result": acc_result}
 

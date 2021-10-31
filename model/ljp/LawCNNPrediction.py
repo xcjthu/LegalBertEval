@@ -51,7 +51,13 @@ class LawCNNPrediction(nn.Module):
         self.encoder = CNNEncoder(config, gpu_list, *args, **params)
         self.embedding = nn.Embedding(len(json.load(open(config.get("data", "word2id")))), self.hidden_size)
 
-        label2id = json.load(open(config.get("data", "label2id"), "r"))
+        alll2id = json.load(open(config.get("data", "label2id"), "r"))
+        # label2id = json.load(open(config.get("data", "label2id"), "r"))
+        label2id = {}
+        for key in alll2id:
+            if alll2id[key] <=  100:
+                label2id[key] = len(label2id)
+        # label2id = {key: alll2id[key] for key in alll2id if alll2id[key] <=  100}
         self.fc = nn.Linear(self.hidden_size, len(label2id) * 2)
         self.criterion = MultiLabelSoftmaxLoss(config, len(label2id))
         self.accuracy_function = multi_label_accuracy
@@ -61,7 +67,7 @@ class LawCNNPrediction(nn.Module):
         batch = x.shape[0]
         inp = self.embedding(x)
         y = self.encoder(inp)
-    
+
         result = self.fc(y).view(batch, -1, 2)
         # if mode == "train":
         #     # result = result - 100 * data["label_mask"]

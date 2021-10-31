@@ -8,18 +8,22 @@ class CNNLawDataset(Dataset):
 
         self.data_path = config.get("data", "%s_data_path" % mode)
         data = json.load(open(self.data_path, "r"))
-        self.label2id = json.load(open(config.get("data", "label2id"), "r"))
+        alll2id = json.load(open(config.get("data", "label2id"), "r"))
+        # self.label2id = json.load(open(config.get("data", "label2id"), "r"))
+        self.label2id = {}
+        for key in alll2id:
+            if alll2id[key] <=  100:
+                self.label2id[key] = len(self.label2id)
+        # self.label2id = {key: alll2id[key] for key in alll2id if alll2id[key] <=  100}
         self.data = []
         average_label_num = 0
         for doc in data:
-            text = None
+            text = []
             for seg in doc["segments"]:
-                if seg["label"] == "本院查明":
-                    text = []
+                if seg["label"] in ["原告诉称", "被告辩称"]:
                     for para in seg["txt"]:
                         text += para
-                    break
-            if text is None:
+            if text == []:
                 continue
             label = [law["law"] + "-" + ("第%s条第%s款" % (self.num2cn(law["tiao"]), self.num2cn(law["kuan"])) if law["kuan"] != 0 else "第%s条" % self.num2cn(law["tiao"])).replace("第一十", "第十") for law in doc["reflaw"]]
             label = [l for l in label if l in self.label2id]

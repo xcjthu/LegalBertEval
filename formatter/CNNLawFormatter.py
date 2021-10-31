@@ -16,7 +16,13 @@ class CNNLawFormatter(BasicFormatter):
         self.max_len = config.getint("train", "max_len")
         self.mode = mode
 
-        self.label2id = json.load(open(config.get("data", "label2id"), "r"))
+        alll2id = json.load(open(config.get("data", "label2id"), "r"))
+        # self.label2id = json.load(open(config.get("data", "label2id"), "r"))
+        self.label2id = {}
+        for key in alll2id:
+            if alll2id[key] <=  100:
+                self.label2id[key] = len(self.label2id)
+        # self.label2id = {key: alll2id[key] for key in alll2id if alll2id[key] <=  100}
 
     def convert_tokens_to_ids(self, text):
         arr = []
