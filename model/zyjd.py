@@ -1,0 +1,69 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import json
+
+from model.loss import MultiLabelSoftmaxLoss, log_square_loss
+
+from tools.accuracy_tool import prf
+from transformers import BertModel, AutoModel, AutoConfig
+
+class BertPooler(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+        self.activation = nn.Tanh()
+
+    def forward(self, hidden_states):
+        # We "pool" the model by simply taking the hidden state corresponding
+        # to the first token.
+        first_token_tensor = hidden_states[:, :11] # batch, 11, hidden_size
+        pooled_output = self.dense(first_token_tensor)
+        pooled_output = self.activation(pooled_output)
+        return pooled_output.view(hidden_states.shape[0], -1)
+
+class zyjd(nn.Module):
+    def __init__(self, config, gpu_list, *args, **params):
+        super(zyjd, self).__init__()
+        plm_path = config.get('train', 'PLM_path')
+
+        self.encoder = AutoModel.from_pretrained(plm_path)
+        self.plm_config = AutoConfig.from_pretrained(plm_path)
+        self.hidden_size = self.plm_config.hidden_size
+        self.pooler = BertPooler(self.plm_config)
+
+        self.read_label(config)
+        self.fc = nn.Linear(self.hidden_size * 11, len(self.label2id))
+        # self.criterion = MultiLabelSoftmaxLoss(config, len(label2id))
+        self.criterion = nn.CrossEntropyLoss()
+        self.accuracy_function = prf
+
+    def read_label(self, config):
+        label2num = json.load(open(config.get("data", "label2num")))
+        num_threshold = config.getint("data", "threshold")
+        self.label2id = {"NA": 0}
+        for l in label2num:
+            if label2num[l] > num_threshold:
+                # key = "/".join(l.split("/")[:2])
+                # key = l.split("/")[0]
+                key = l
+                if key not in self.label2id:
+                    self.label2id[key] = len(self.label2id)
+
+    def forward(self, data, config, gpu_list, acc_result, mode):
+        x = data['text']
+        batch = x.shape[0]
+        # if self.lfm:
+        #     out = self.encoder(x, attention_mask = data['mask'], global_attention_mask = data["global_att"])
+        # else:
+        out = self.encoder(x, attention_mask = data['mask'])
+        # y = out['pooler_output']
+        y = self.pooler(out["last_hidden_state"])
+        # result = self.fc(y).view(batch, -1, 2)
+        result = self.fc(y).view(batch, -1)
+        # if mode == "train":
+        #     result = result - 100 * data["label_mask"]
+        loss = self.criterion(result, data["label"])
+        acc_result = self.accuracy_function(result, data["label"], config, acc_result)
+
+        return {"loss": loss, "acc_result": acc_result, "output": list(zip(torch.max(result, dim=1)[1].tolist(), data["ids"]))}

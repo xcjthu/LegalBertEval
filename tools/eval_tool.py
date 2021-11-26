@@ -90,18 +90,17 @@ def valid(model, dataset, epoch, config, gpu_list, output_function, mode="valid"
         raise NotImplementedError
 
     if config.getboolean("distributed", "use"):
-        dict_acc_result = {"%d-%s" % (i, key): acc_result[i][key] for i in range(len(acc_result)) for key in acc_result[i]}
-        shape = len(dict_acc_result) + 1
-        mytensor = torch.FloatTensor([total_loss] + [dict_acc_result[key] for key in dict_acc_result]).to(gpu_list[local_rank])
+
+        shape = len(acc_result) + 1
+        mytensor = torch.FloatTensor([total_loss] + [acc_result[key] for key in acc_result]).to(gpu_list[local_rank])
         mylist = [torch.FloatTensor(shape).to(gpu_list[local_rank]) for i in range(config.getint('distributed', 'gpu_num'))]
         torch.distributed.all_gather(mylist, mytensor)#, 0)
         if local_rank == 0:
             mytensor = sum(mylist)
             total_loss = float(mytensor[0]) / config.getint('distributed', 'gpu_num')
             index = 1
-            for key in dict_acc_result:
-                dict_acc_result[key] = int(mytensor[index])
-                acc_result[int(key.split("-")[0])][key.split("-")[1]] = dict_acc_result[key]
+            for key in acc_result:
+                acc_result[key] = int(mytensor[index])
                 index += 1
 
     if local_rank <= 0:

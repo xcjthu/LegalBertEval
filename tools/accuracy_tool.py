@@ -100,6 +100,17 @@ def single_label_top1_accuracy(outputs, label, config, result=None):
 
     return result
 
+def prf(outputs, label, config, result=None):
+    if result is None:
+        result = {"TP": 0, "FN": 0, "FP": 0, "TN": 0}
+    pred = torch.max(outputs, dim=1)[1]
+    # id2 = label
+    result["TP"] += int((pred[label != 0] == label[label != 0]).sum())
+    result["TN"] += int((pred[label == 0] == 0).sum())
+    result["FP"] += int((pred[pred != 0] != label[pred != 0]).sum())
+    result["FN"] += int((label[pred == 0] != 0).sum())
+    return result
+
 
 def multi_label_accuracy(outputs, label, config, result=None):
     if len(label[0]) != len(outputs[0]):

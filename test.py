@@ -20,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument('--gpu', '-g', help="gpu id list")
     parser.add_argument('--checkpoint', help="checkpoint file path", required=True)
     parser.add_argument('--result', help="result file path", required=True)
+    parser.add_argument('--local_rank', type=int, help='local rank', default=-1)
     args = parser.parse_args()
 
     configFilePath = args.config
@@ -39,6 +40,7 @@ if __name__ == "__main__":
     os.system("clear")
 
     config = create_config(configFilePath)
+    config.set('distributed', 'local_rank', args.local_rank)
 
     cuda = torch.cuda.is_available()
     logger.info("CUDA available: %s" % str(cuda))
@@ -46,7 +48,7 @@ if __name__ == "__main__":
         logger.error("CUDA is not available but specific gpu id")
         raise NotImplementedError
 
-    parameters = init_all(config, gpu_list, args.checkpoint, "test")
+    parameters = init_all(config, gpu_list, args.checkpoint, "test", local_rank = args.local_rank)
 
     json.dump(test(parameters, config, gpu_list), open(args.result, "w", encoding="utf8"), ensure_ascii=False,
               sort_keys=True, indent=2)

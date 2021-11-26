@@ -2,12 +2,14 @@ import logging
 
 from .LawFormatter import LawFormatter
 from .CNNLawFormatter import CNNLawFormatter
+from .zyjdFormatter import zyjdFormatter
 
 logger = logging.getLogger(__name__)
 
 formatter_list = {
     "law": LawFormatter,
     "cnn": CNNLawFormatter,
+    "zyjd": zyjdFormatter,
 }
 
 

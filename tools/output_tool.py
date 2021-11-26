@@ -6,6 +6,20 @@ from .accuracy_tool import gen_micro_macro_result
 def null_output_function(data, config, *args, **params):
     return ""
 
+def prf(data, config, *args, **params):
+    if (data["TP"] + data["FP"]) == 0:
+        precision = 0
+    else:
+        precision = data["TP"] / (data["TP"] + data["FP"])
+    if (data["TP"] + data["FN"]) == 0:
+        recall = 0
+    else:
+        recall = data["TP"] / (data["TP"] + data["FN"])
+    if precision == 0 and recall == 0:
+        f1 = 0
+    else:
+        f1 = 2 * precision * recall / (precision + recall)
+    return {"precision": precision, "recall": recall, "f1": f1}
 
 def basic_output_function(data, config, *args, **params):
     which = config.get("output", "output_value").replace(" ", "").split(",")
