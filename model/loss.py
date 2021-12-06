@@ -28,6 +28,44 @@ class MultiLabelSoftmaxLoss(nn.Module):
         return loss
 
 
+def log_sum_exp(prediction, target, mask=None):
+    """
+    Expand softmax to multi-label classification
+
+    :param prediction:
+        Torch Float Tensor with shape of [batch_size * sequence_length * N]
+            don't use sigmoid or softmax
+
+    :param target:
+        Torch Long Tensor with shape of [batch_size * sequence_length * N]
+            one-hot representation for the label
+
+    :param mask:
+        Torch Long Tensor with shape of [batch_size * sequence_length * N]
+            attention mask, mask out the padded token.
+            (padded token should not be count as negative token)
+
+    :return:
+        log sum exp loss with shape of [batch_size * sequence_length]
+    """
+    if mask is None:
+        mask = torch.ones_like(prediction).long()
+
+    prediction_pos = prediction.masked_fill((1-target).bool(), 1e12)
+
+    prediction_neg = prediction.masked_fill((target | (1-mask)).bool(), -1e12)
+
+    zeros = torch.zeros_like(prediction[..., :1])
+
+    prediction_pos = torch.cat((-prediction_pos, zeros), dim=-1)
+    prediction_neg = torch.cat((prediction_neg, zeros), dim=-1)
+
+    pos_loss = torch.logsumexp(prediction_pos, dim=-1)
+    neg_loss = torch.logsumexp(prediction_neg, dim=-1)
+
+    return (pos_loss + neg_loss).mean()
+
+
 def multi_label_cross_entropy_loss(outputs, labels):
     labels = labels.float()
     temp = outputs

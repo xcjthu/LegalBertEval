@@ -18,10 +18,10 @@ class zyjdDataset(Dataset):
             self.negative[i]["id"] = "n-%d" % i
         self.read_label(config)
         if mode == "train":
-            self.ratio = 0 #config.getfloat("train", "neg_ratio")
+            self.ratio = config.getfloat("train", "neg_ratio")
         else:
-            self.ratio = 0
-            self.data = self.positive # + self.negative
+            self.ratio = 1
+            self.data = self.positive + self.negative
 
     def read_label(self, config):
         label2num = json.load(open(config.get("data", "label2num")))
@@ -45,4 +45,4 @@ class zyjdDataset(Dataset):
             return self.data[item]
 
     def __len__(self):
-        return len(self.positive) + int(self.ratio * len(self.negative))
+        return len(self.positive) #+ int(self.ratio * len(self.negative))

@@ -20,19 +20,24 @@ class zyjdFormatter(BasicFormatter):
     def read_label(self, config):
         label2num = json.load(open(config.get("data", "label2num")))
         num_threshold = config.getint("data", "threshold")
-        self.label2id = {"NA": 0}
+        self.label2id = {}#{"NA": 0}
+        deletelabel = set([line.strip() for line in open("/data/disk1/private/xcj/MJJDInfoExtract/DisputeFocus/data/zyjd/delete_label.txt", "r")])
         for l in label2num:
-            if label2num[l] > num_threshold:
-                # key = "/".join(l.split("/")[:2])
-                # key = l.split("/")[0]
-                key = l
-                if key not in self.label2id:
-                    self.label2id[key] = len(self.label2id)
+            if l in deletelabel:
+                continue
+            self.label2id[l] = len(self.label2id)
+            # if label2num[l] > num_threshold:
+            #     # key = "/".join(l.split("/")[:2])
+            #     # key = l.split("/")[0]
+            #     key = l
+            #     if key not in self.label2id:
+            #         self.label2id[key] = len(self.label2id)
 
     def process(self, data, config, mode, *args, **params):
         inputx = []
         mask = []
-        labels = []
+        # labels = []
+        labels = np.zeros((len(data), len(self.label2id)))
         # label_mask = np.zeros((len(data), len(self.label2id)))
 
         for did, temp in enumerate(data):
@@ -41,7 +46,12 @@ class zyjdFormatter(BasicFormatter):
             tokens += [self.tokenizer.pad_token_id] * (self.max_len - len(tokens))
             inputx.append(tokens)
             # labels.append(self.label2id["/".join(random.choice(temp["label"]).split("/")[:2])])
-            labels.append(self.label2id[random.choice(temp["label"])])
+            # labels.append(self.label2id[random.choice(temp["label"])])
+            for l in temp["label"]:
+                if l == "NA":
+                    continue
+                labels[did, self.label2id[l]] = 1
+
 
         return {
             "text": torch.LongTensor(inputx),
