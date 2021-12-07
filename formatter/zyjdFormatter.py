@@ -47,11 +47,11 @@ class zyjdFormatter(BasicFormatter):
             inputx.append(tokens)
             # labels.append(self.label2id["/".join(random.choice(temp["label"]).split("/")[:2])])
             # labels.append(self.label2id[random.choice(temp["label"])])
-            for l in temp["label"]:
-                if l == "NA":
-                    continue
-                labels[did, self.label2id[l]] = 1
-
+            if mode != "test":
+                for l in temp["label"]:
+                    if l == "NA":
+                        continue
+                    labels[did, self.label2id[l]] = 1
 
         return {
             "text": torch.LongTensor(inputx),

@@ -23,7 +23,7 @@ def test(parameters, config, gpu_list):
 
     output_time = config.getint("output", "output_time")
     step = -1
-    result = []
+    result = {}
 
     for step, data in enumerate(dataset):
         for key in data.keys():
@@ -34,7 +34,11 @@ def test(parameters, config, gpu_list):
                     data[key] = Variable(data[key])
 
         results = model(data, config, gpu_list, acc_result, "test")
-        result = result + results["output"]
+        for pred in results["output"]:
+            if not pred["id"] in result:
+                result[pred["id"]] = set()
+            for l in pred["label"]:
+                result[pred["id"]].add(l)
         cnt += 1
 
         if step % output_time == 0:
@@ -43,6 +47,9 @@ def test(parameters, config, gpu_list):
             output_value(0, "test", "%d/%d" % (step + 1, total_len), "%s/%s" % (
                 gen_time_str(delta_t), gen_time_str(delta_t * (total_len - step - 1) / (step + 1))),
                          "%.3lf" % (total_loss / (step + 1)), output_info, '\r', config)
+            # break
+    for cid in result:
+        result[cid] = list(result[cid])
 
     if step == -1:
         logger.error("There is no data given to the model in this epoch, check your data.")

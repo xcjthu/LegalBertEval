@@ -58,6 +58,7 @@ class zyjd(nn.Module):
             #     key = l
             #     if key not in self.label2id:
             #         self.label2id[key] = len(self.label2id)
+        self.id2label = {self.label2id[key]: key for key in self.label2id}
 
     def forward(self, data, config, gpu_list, acc_result, mode):
         x = data['text']
@@ -69,11 +70,22 @@ class zyjd(nn.Module):
         # y = out['pooler_output']
         y = self.pooler(out["last_hidden_state"])
         # result = self.fc(y).view(batch, -1, 2)
-        result = self.fc(y).view(batch, -1)
+        result = self.fc(y).view(batch, -1) # batch, label_num
         # if mode == "train":
         #     result = result - 100 * data["label_mask"]
-        loss = self.criterion(result, data["label"])
-        acc_result = self.accuracy_function(result, data["label"], config, acc_result)
+        if mode != "test":
+            loss = self.criterion(result, data["label"])
+            acc_result = self.accuracy_function(result, data["label"], config, acc_result)
+        else:
+            pred = (result > 0).tolist()
+            ret = []
+            for pid, p in enumerate(pred):
+                tmp = {"id": data["ids"][pid], "label": []}
+                for lid, v in enumerate(p):
+                    if v:
+                        tmp["label"].append(self.id2label[lid])
+                ret.append(tmp)
+            return {"output": ret, "loss": 0}
 
         return {"loss": loss, "acc_result": acc_result, "output": list(zip(torch.max(result, dim=1)[1].tolist(), data["ids"]))}
 

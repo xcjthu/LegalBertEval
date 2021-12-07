@@ -51,4 +51,4 @@ if __name__ == "__main__":
     parameters = init_all(config, gpu_list, args.checkpoint, "test", local_rank = args.local_rank)
 
     json.dump(test(parameters, config, gpu_list), open(args.result, "w", encoding="utf8"), ensure_ascii=False,
-              sort_keys=True, indent=2)
+              indent=2)
